@@ -120,12 +120,12 @@
       ],
       "properties": {
         "offset": {
-          "x": -830,
-          "y": 880
+          "x": -880,
+          "y": 1640
         },
         "from": "{{flow.channel.address}}",
         "to": "{{contact.channel.address}}",
-        "body": "Confirmed. Arrive or join if televisit by My Health Online. For ?s regarding this appt call {{flow.channel.address}}"
+        "body": "Thanks. Your appointment is confirmed."
       }
     },
     {
@@ -147,7 +147,7 @@
         },
         "from": "{{flow.channel.address}}",
         "to": "{{contact.channel.address}}",
-        "body": "Your appt has been cancelled. Please call or text back to reschedule w/RSCH or visit mho.sutterhealth.org."
+        "body": "Your appt has been cancelled. Please call or text back to reschedule w/RSCH or visit ......"
       }
     },
     {
@@ -171,29 +171,8 @@
           "y": 760
         },
         "from": "{{flow.channel.address}}",
-        "body": "Sure, we can help you with re-scheduling your appointment. Here are the next 3 available slots:\n1. Jan 25 @ 1pm\n2. Jan 26 @ 2:30pm\n3. Jan 27 @ 4pm\n\nConfirm w/ appointment # or speak with the doctor's office w/CALL",
+        "body": "Sure, we can help you with re-scheduling your appointment. Here are the next 3 available slots:\n1. Mar 9 @ 1pm\n2. Mar 10 @ 2:30pm\n3. Mar 12 @ 4pm\n\nConfirm w/ appointment # or speak with the doctor's office w/CALL",
         "timeout": "3600"
-      }
-    },
-    {
-      "name": "reschedule_confirmation",
-      "type": "send-message",
-      "transitions": [
-        {
-          "event": "sent"
-        },
-        {
-          "event": "failed"
-        }
-      ],
-      "properties": {
-        "offset": {
-          "x": 240,
-          "y": 1660
-        },
-        "from": "{{flow.channel.address}}",
-        "to": "{{contact.channel.address}}",
-        "body": "Your appointment has been re-scheduled"
       }
     },
     {
@@ -290,11 +269,11 @@
             "key": "contact_phone"
           },
           {
-            "value": "+14083985848",
+            "value": "+1XXXXXXXXX",
             "key": "agent_phone"
           }
         ],
-        "url": "https://black-bee-6064.twil.io/call_contact_and_agent"
+        "url": "https://xxxxxxx.twil.io/call_contact_and_agent"
       }
     },
     {
@@ -356,7 +335,7 @@
             "key": "appt_status"
           }
         ],
-        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+        "url": "https://xxxxxx.twil.io/update_airtable_appointment"
       }
     },
     {
@@ -388,7 +367,7 @@
             "key": "appt_status"
           }
         ],
-        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+        "url": "https://xxxxxxxxx/update_airtable_appointment"
       }
     },
     {
@@ -396,11 +375,11 @@
       "type": "run-function",
       "transitions": [
         {
-          "next": "reschedule_confirmation",
+          "next": "send_confirmation_sms",
           "event": "success"
         },
         {
-          "next": "reschedule_confirmation",
+          "next": "send_confirmation_sms",
           "event": "fail"
         }
       ],
@@ -420,7 +399,7 @@
             "key": "appt_status"
           }
         ],
-        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+        "url": "https://xxxxxxxx.twil.io/update_airtable_appointment"
       }
     },
     {
@@ -440,8 +419,8 @@
           "y": 1240
         },
         "from": "{{flow.channel.address}}",
-        "to": "+14083455848",
-        "body": "Hi Jon, an earlier spot opened up for your currently scheduled 01/19/2020 appointment. Please confirm w/Yes if you would like to accept 12/21/2020 2:00pm spot instead."
+        "to": "+1XXXXXXXXXX",
+        "body": "Jon, earlier spot (Feb 2, 2pm) opened up for your currently scheduled 01/19/2020 appointment. Please confirm w/Yes if you would like to accept"
       }
     }
   ],
