@@ -1,0 +1,452 @@
+{
+  "description": "sms_appointment_reminder",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "split_sms",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "next": "confirm_appt",
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -180,
+          "y": -320
+        }
+      }
+    },
+    {
+      "name": "confirm_appt",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_confirmation",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 200,
+          "y": -60
+        },
+        "from": "{{flow.channel.address}}",
+        "body": "{{flow.data.patient_name}}  has an appt on {{flow.data.appointment_date}} @ {{flow.data.appointment_time}}. Confirm w/YES. Cancel w/NO. Reschedule w/RSCH. Txt Help 4help.",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_confirmation",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "confirm_appointment",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "1",
+              "arguments": [
+                "{{widgets.confirm_appt.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "YES"
+            }
+          ]
+        },
+        {
+          "next": "cancel_appointment",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "2",
+              "arguments": [
+                "{{widgets.confirm_appt.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "NO"
+            }
+          ]
+        },
+        {
+          "next": "reschedule_appt",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to RSCH",
+              "arguments": [
+                "{{widgets.confirm_appt.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "RSCH"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.confirm_appt.inbound.Body}}",
+        "offset": {
+          "x": 130,
+          "y": 340
+        }
+      }
+    },
+    {
+      "name": "send_confirmation_sms",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -830,
+          "y": 880
+        },
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Confirmed. Arrive or join if televisit by My Health Online. For ?s regarding this appt call {{flow.channel.address}}"
+      }
+    },
+    {
+      "name": "send_cancellation_sms",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "Copy_of_send_cancellation_sms",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -380,
+          "y": 980
+        },
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Your appt has been cancelled. Please call or text back to reschedule w/RSCH or visit mho.sutterhealth.org."
+      }
+    },
+    {
+      "name": "reschedule_appt",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_reschedule",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 30,
+          "y": 760
+        },
+        "from": "{{flow.channel.address}}",
+        "body": "Sure, we can help you with re-scheduling your appointment. Here are the next 3 available slots:\n1. Jan 25 @ 1pm\n2. Jan 26 @ 2:30pm\n3. Jan 27 @ 4pm\n\nConfirm w/ appointment # or speak with the doctor's office w/CALL",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "reschedule_confirmation",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 240,
+          "y": 1660
+        },
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Your appointment has been re-scheduled"
+      }
+    },
+    {
+      "name": "split_reschedule",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "Copy_of_confirm_appointment",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to nurse",
+              "arguments": [
+                "{{widgets.reschedule_appt.inbound.Body}}"
+              ],
+              "type": "regex",
+              "value": "[1-3]"
+            }
+          ]
+        },
+        {
+          "next": "send_message_1",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to nurse",
+              "arguments": [
+                "{{widgets.reschedule_appt.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "CALL"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.reschedule_appt.inbound.Body}}",
+        "offset": {
+          "x": 460,
+          "y": 1030
+        }
+      }
+    },
+    {
+      "name": "send_message_1",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "Place_call_to_doc_office",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 960,
+          "y": 1300
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Sure, you will now receive a call that will connect you with your doctor's office."
+      }
+    },
+    {
+      "name": "Place_call_to_doc_office",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 800,
+          "y": 1640
+        },
+        "parameters": [
+          {
+            "value": "{{flow.channel.address}}",
+            "key": "twilio_phone"
+          },
+          {
+            "value": "{{contact.channel.address}}",
+            "key": "contact_phone"
+          },
+          {
+            "value": "+14083985848",
+            "key": "agent_phone"
+          }
+        ],
+        "url": "https://black-bee-6064.twil.io/call_contact_and_agent"
+      }
+    },
+    {
+      "name": "split_sms",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "reschedule_appt",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to RSCH",
+              "arguments": [
+                "{{trigger.message.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "RSCH"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.message.Body}}",
+        "offset": {
+          "x": -420,
+          "y": 70
+        }
+      }
+    },
+    {
+      "name": "confirm_appointment",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "send_confirmation_sms",
+          "event": "success"
+        },
+        {
+          "next": "send_confirmation_sms",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "default",
+        "offset": {
+          "x": -880,
+          "y": 610
+        },
+        "parameters": [
+          {
+            "value": "{{flow.data.airtable_record_id}}",
+            "key": "record_id"
+          },
+          {
+            "value": "Confirmed",
+            "key": "appt_status"
+          }
+        ],
+        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "send_cancellation_sms",
+          "event": "success"
+        },
+        {
+          "next": "send_cancellation_sms",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "default",
+        "offset": {
+          "x": -410,
+          "y": 700
+        },
+        "parameters": [
+          {
+            "value": "{{flow.data.airtable_record_id}}",
+            "key": "record_id"
+          },
+          {
+            "value": "Cancelled",
+            "key": "appt_status"
+          }
+        ],
+        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+      }
+    },
+    {
+      "name": "Copy_of_confirm_appointment",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "reschedule_confirmation",
+          "event": "success"
+        },
+        {
+          "next": "reschedule_confirmation",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "default",
+        "offset": {
+          "x": 350,
+          "y": 1340
+        },
+        "parameters": [
+          {
+            "value": "{{flow.data.airtable_record_id}}",
+            "key": "record_id"
+          },
+          {
+            "value": "Confirmed",
+            "key": "appt_status"
+          }
+        ],
+        "url": "https://black-bee-6064.twil.io/update_airtable_appointment"
+      }
+    },
+    {
+      "name": "Copy_of_send_cancellation_sms",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -390,
+          "y": 1240
+        },
+        "from": "{{flow.channel.address}}",
+        "to": "+14083455848",
+        "body": "Hi Jon, an earlier spot opened up for your currently scheduled 01/19/2020 appointment. Please confirm w/Yes if you would like to accept 12/21/2020 2:00pm spot instead."
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
